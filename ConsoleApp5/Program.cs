@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -8,8 +10,11 @@ namespace ConsoleApp5
     class Program
     { 
         // Класс для хранения параметров запроса 
-        public class Request { [JsonProperty("version")]
+        public class Request {
+
+            [JsonProperty("version")]
             public string Version { get; set; }
+
             [JsonProperty("dateExecute")]
             public string DateExecute { get; set; }
 
@@ -24,6 +29,12 @@ namespace ConsoleApp5
 
             [JsonProperty("goods")]
             public Good[] Goods { get; set; }
+
+            [JsonProperty("authLogin")]
+            public string AuthLogin { get; set; }
+
+            [JsonProperty("secure")]
+            public string Secure { get; set; }
         }
 
         // Класс для хранения параметров товара
@@ -48,14 +59,12 @@ namespace ConsoleApp5
             [JsonProperty("result")]
             public Result Result { get; set; }
         }
-
         // Класс для хранения результата расчета
         public class Result
         {
             [JsonProperty("price")]
             public double Price { get; set; }
         }
-
         // Метод для отправки запроса и получения ответа от API СДЭК
         public static async Task<Response> GetCdekPriceAsync(Request request)
         {
@@ -64,9 +73,6 @@ namespace ConsoleApp5
             {
                 // Устанавливаем базовый адрес API СДЭК
                 client.BaseAddress = new Uri("https://api.cdek.ru/");
-                
-                // Устанавливаем токен авторизации в заголовке Authorization
-                //client.DefaultRequestHeaders.Add("Authorization", "Bearer Токен_Авторизации");
 
                 // Сериализуем объект request в JSON-строку
                 var json = JsonConvert.SerializeObject(request);
@@ -85,10 +91,8 @@ namespace ConsoleApp5
                 {
                     // Читаем содержимое ответа как строку
                     var result = await response.Content.ReadAsStringAsync();
-
                     // Десериализуем строку в объект Response
                     var price = JsonConvert.DeserializeObject<Response>(result);
-
                     // Возвращаем объект Response
                     return price;
                 }
@@ -100,6 +104,29 @@ namespace ConsoleApp5
             }
         }
 
+        // Метод для вычисления значения поля secure по алгоритму СДЭК
+        public static string GetSecure(string date, string password)
+        {
+            // Сконкатенируем дату и пароль с помощью символа амперсанда (&)
+            var input = date + "&" + password;
+
+            // Создаем объект MD5CryptoServiceProvider для вычисления хеша MD5 от строки input
+            using (var md5 = new MD5CryptoServiceProvider())
+            {
+                // Преобразуем строку input в массив байтов
+                var bytes = Encoding.UTF8.GetBytes(input);
+
+                // Вычисляем хеш MD5 от массива байтов
+                var hash = md5.ComputeHash(bytes);
+
+                // Преобразуем массив байтов в строку в шестнадцатеричном формате
+                var output = BitConverter.ToString(hash).Replace("-", "").ToLower();
+
+                // Возвращаем полученную строку
+                return output;
+            }
+        }
+
         static async Task Main(string[] args)
         {
             // Создаем объект Request с нужными параметрами
@@ -107,19 +134,25 @@ namespace ConsoleApp5
             {
                 Version = "1.0",
                 DateExecute = DateTime.Now.ToString("yyyy-MM-dd"),
-                SenderCityId = "78000000000", // ФИАС код города Санкт-Петербурга
-                ReceiverCityId = "77000000000", // ФИАС код города Москвы
-                TariffId = 137, // Код тарифа курьерской доставки СДЭК
+                SenderCityId = "137", // ФИАС код города Санкт-Петербурга
+                ReceiverCityId = "44", // ФИАС код города Москвы
+                TariffId = 2, // Код тарифа курьерской доставки СДЭК
                 Goods = new Good[]
                 {
                 new Good()
                 {
-                    Weight = 1000, // Вес в граммах
-                    Length = 100, // Длина в миллиметрах
-                    Width = 100, // Ширина в миллиметрах
+                    Weight = 0.1, // Вес в граммах
+                    Length = 10.22, // Длина в миллиметрах
+                    Width = 20.66, // Ширина в миллиметрах
                     Height = 100 // Высота в миллиметрах
                 }
-                }
+                },
+
+                // Присваиваем свойству AuthLogin значение идентификатора аккаунта
+                AuthLogin = "EMscd6r9JnFiQ3bLoyjJY6eM78JrJceI",
+
+                // Вычисляем и присваиваем свойству Secure значение секретного ключа по алгоритму СДЭК
+                Secure = GetSecure(DateTime.Now.ToString("yyyy-MM-dd"), "PjLZkKBHEiLK3YsjtNrt3TGNG0ahs3kG")
             };
 
             // Вызываем метод GetCdekPriceAsync с объектом request и получаем объект response

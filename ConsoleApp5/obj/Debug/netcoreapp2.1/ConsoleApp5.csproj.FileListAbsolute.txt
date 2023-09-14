@@ -9,3 +9,14 @@ C:\Users\vadim\source\repos\ConsoleApp5\ConsoleApp5\obj\Debug\netcoreapp2.1\Cons
 C:\Users\vadim\source\repos\ConsoleApp5\ConsoleApp5\bin\Debug\netcoreapp2.1\ConsoleApp5.pdb
 C:\Users\vadim\source\repos\ConsoleApp5\ConsoleApp5\obj\Debug\netcoreapp2.1\ConsoleApp5.dll
 C:\Users\vadim\source\repos\ConsoleApp5\ConsoleApp5\obj\Debug\netcoreapp2.1\ConsoleApp5.pdb
+E:\SdekTest\ConsoleApp5\bin\Debug\netcoreapp2.1\ConsoleApp5.deps.json
+E:\SdekTest\ConsoleApp5\bin\Debug\netcoreapp2.1\ConsoleApp5.runtimeconfig.json
+E:\SdekTest\ConsoleApp5\bin\Debug\netcoreapp2.1\ConsoleApp5.runtimeconfig.dev.json
+E:\SdekTest\ConsoleApp5\bin\Debug\netcoreapp2.1\ConsoleApp5.dll
+E:\SdekTest\ConsoleApp5\bin\Debug\netcoreapp2.1\ConsoleApp5.pdb
+E:\SdekTest\ConsoleApp5\obj\Debug\netcoreapp2.1\ConsoleApp5.csprojAssemblyReference.cache
+E:\SdekTest\ConsoleApp5\obj\Debug\netcoreapp2.1\ConsoleApp5.csproj.CoreCompileInputs.cache
+E:\SdekTest\ConsoleApp5\obj\Debug\netcoreapp2.1\ConsoleApp5.AssemblyInfoInputs.cache
+E:\SdekTest\ConsoleApp5\obj\Debug\netcoreapp2.1\ConsoleApp5.AssemblyInfo.cs
+E:\SdekTest\ConsoleApp5\obj\Debug\netcoreapp2.1\ConsoleApp5.dll
+E:\SdekTest\ConsoleApp5\obj\Debug\netcoreapp2.1\ConsoleApp5.pdb
