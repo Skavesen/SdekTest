@@ -19,10 +19,12 @@ namespace ConsoleApp5
             public string DateExecute { get; set; }
 
             [JsonProperty("senderCityId")]
-            public string SenderCityId { get; set; }
+            public int SenderCityId { get; set; }
+            //public Location SenderCityId { get; set; }
 
             [JsonProperty("receiverCityId")]
-            public string ReceiverCityId { get; set; }
+            public int ReceiverCityId { get; set; }
+            //public Location ReceiverCityId { get; set; }
 
             [JsonProperty("tariffId")]
             public int TariffId { get; set; }
@@ -65,6 +67,13 @@ namespace ConsoleApp5
             [JsonProperty("price")]
             public double Price { get; set; }
         }
+
+        // Класс для хранения параметров города
+        public class Location
+        {
+            [JsonProperty("fiasGuid")]
+            public string FiasGuid { get; set; }
+        }
         // Метод для отправки запроса и получения ответа от API СДЭК
         public static async Task<Response> GetCdekPriceAsync(Request request)
         {
@@ -73,19 +82,14 @@ namespace ConsoleApp5
             {
                 // Устанавливаем базовый адрес API СДЭК
                 client.BaseAddress = new Uri("https://api.cdek.ru/");
-
                 // Сериализуем объект request в JSON-строку
                 var json = JsonConvert.SerializeObject(request);
-
                 // Создаем HttpContent из JSON-строки
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
                 // Отправляем POST-запрос по адресу /calculator/calculate_price_by_json.php с содержимым content
                 var response = await client.PostAsync("/calculator/calculate_price_by_json.php", content);
-
                 Console.WriteLine("Код состояния:" + response.StatusCode);
                 Console.WriteLine("Описание:" + response.ReasonPhrase);
-
                 // Если ответ успешный, то
                 if (response.IsSuccessStatusCode)
                 {
@@ -107,10 +111,8 @@ namespace ConsoleApp5
         // Метод для вычисления значения поля secure по алгоритму СДЭК
         public static string GetSecure(string date, string password)
         {
-            // Сконкатенируем дату и пароль с помощью символа амперсанда (&)
             var input = date + "&" + password;
 
-            // Создаем объект MD5CryptoServiceProvider для вычисления хеша MD5 от строки input
             using (var md5 = new MD5CryptoServiceProvider())
             {
                 // Преобразуем строку input в массив байтов
@@ -127,15 +129,76 @@ namespace ConsoleApp5
             }
         }
 
+        // Метод для получения cityCode по ФИАС коду города
+        public static async Task<int> GetCityCodeByFias(string fias)
+        {
+            // Создаем HttpClient для отправки HTTP-запросов
+            using (var client = new HttpClient())
+            {
+                // Устанавливаем базовый адрес API СДЭК
+                client.BaseAddress = new Uri("http://integration.cdek.ru/");
+                // Формируем URL запроса с параметром fiasGuid
+                var url = $"/v1/location/cities/json?fiasGuid={fias}";
+                // Отправляем GET-запрос по сформированному URL
+                var response = await client.GetAsync(url);
+                Console.WriteLine("Код состояния:" + response.StatusCode);
+                Console.WriteLine("Описание:" + response.ReasonPhrase);
+                // Если ответ успешный, то
+                if (response.IsSuccessStatusCode)
+                {
+                    // Читаем содержимое ответа как строку
+                    var result = await response.Content.ReadAsStringAsync();
+                    // Десериализуем строку в массив объектов City
+                    var cities = JsonConvert.DeserializeObject<City[]>(result);
+                    // Если есть хотя бы один город, то
+                    if (cities.Length > 0)
+                    {
+                        // Возвращаем cityCode из первого города
+                        return cities[0].CityCode;
+                    }
+                    else
+                    {
+                        // Иначе возвращаем -1
+                        return -1;
+                    }
+
+                }
+                else
+                {
+                    // Иначе возвращаем -1
+                    return -1;
+                }
+            }
+        }
+
+        // Класс для хранения данных о городе от API СДЭК
+        public class City
+        {
+            [JsonProperty("cityCode")]
+            public int CityCode { get; set; }
+        }
+
         static async Task Main(string[] args)
         {
-            // Создаем объект Request с нужными параметрами
+            // Получаем cityCode для Санкт-Петербурга по ФИАС коду c2deb16a-0330-4f05-821f-1d09c93331e6
+            var senderCityCode = await GetCityCodeByFias("c2deb16a-0330-4f05-821f-1d09c93331e6");
+            Console.WriteLine($"Код города Санкт-Петербурга: {senderCityCode}");
+
+            // Получаем cityCode для Москвы по ФИАС коду 0c5b2444-70a0-4932-980c-b4dc0d3f02b5
+            var receiverCityCode = await GetCityCodeByFias("0c5b2444-70a0-4932-980c-b4dc0d3f02b5");
+            Console.WriteLine($"Код города Москвы: {receiverCityCode}");
+
+            // Создаем объект Request с нужными параметрами, используя полученные cityCode вместо ФИАС кодов городов
             var request = new Request()
             {
                 Version = "1.0",
                 DateExecute = DateTime.Now.ToString("yyyy-MM-dd"),
-                SenderCityId = "137", // ФИАС код города Санкт-Петербурга
-                ReceiverCityId = "44", // ФИАС код города Москвы
+                SenderCityId = senderCityCode,
+                /* SenderCityId = new Location()
+                 {
+                     FiasGuid = "c2deb16a-0330-4f05-821f-1d09c93331e6"
+                 },*/
+                ReceiverCityId = receiverCityCode,
                 TariffId = 2, // Код тарифа курьерской доставки СДЭК
                 Goods = new Good[]
                 {
